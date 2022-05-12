@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
+    <title>Echo藏宝图</title>
+    <link rel="icon" href="images/favico.ico">
+    <script src="./js/base.js"></script>
+    <link rel="stylesheet" href="../backend/plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="styles/vant.min.css"/>
+    <link rel="stylesheet" href="styles/index.css"/>
+    <link rel="stylesheet" href="styles/main.css"/>
+</head>
+<body>
+<div id="main" class="app">
+    <div class="divHead">
+        <img src="./images/user.png" @click="toUserPage"/>
+    </div>
+    <div class="divTitle">
+        <div class="divStatic">
+            <img src="./images/logo.png" class="logo" alt=""/>
+            <div class="divDesc">
+                <div class="divName">Echo餐厅</div>
+                <div class="divSend">
+                    <span><img src="./images/time.png" alt=""/> 距离1.5km</span>
+                    <span><img src="./images/money.png" alt=""/> 配送费6元</span>
+                    <span><img src="./images/location.png" alt=""/> 预计时长12min</span>
+                </div>
+            </div>
+        </div>
+        <div class="divDesc">
+            简介: 菩提阁中餐厅是菩提阁点餐的独立的品牌，定位“大众 化的美食外送餐饮”，旨为顾客打造专业美食。
+        </div>
+    </div>
+    <div class="divBody">
+        <div class="divType">
+            <ul>
+                <li v-for="(item,index) in categoryList" :key="index"
+                    @click="categoryClick(index,item.id,item.categoryType)"
+                    :class="{active:activeType === index}">{{item.categoryName}}
+                </li>
+            </ul>
+        </div>
+
+        <div class="divMenu">
+            <div>
+                <div class="divItem" v-for="(item,index) in dishAndComboList" :key="index"
+                     @click="dishAndComboDetails(item)">
+                    <el-image :src="imgPathConvert(item.image)">
+                        <div slot="error" class="image-slot">
+                            <img src="./images/noImg.png"/>
+                        </div>
+                    </el-image>
+                    <div>
+                        <div class="divName">{{item.name}}</div>
+                        <div class="divDesc">{{item.description}}</div>
+                        <div class="divBottom"><span>￥</span><span>{{item.price / 100}}</span></div>
+                        <div class="divNum">
+                            <div class="divSubtract" v-if="item.amount > 0">
+                                <img src="./images/subtract.png" @click.prevent.stop="subtractCart(item)"/>
+                            </div>
+                            <div class="divDishNum" v-if="item.amount > 0">{{item.amount}}</div>
+                            <div class="divTypes" v-if="item.flavorList && item.flavorList.length > 0 && !item.amount "
+                                 @click.prevent.stop="chooseFlavorClick(item)">选择规格
+                            </div>
+                            <div class="divAdd" v-else>
+                                <img src="./images/add.png" @click.prevent.stop="addCart(item)"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="divLayer">
+        <div class="divLayerLeft"></div>
+        <div class="divLayerRight"></div>
+    </div>
+
+    <div class="divCart" v-if="categoryList.length > 0">
+        <div :class="{imgCartActive: shoppingCartList && shoppingCartList.length > 0, imgCart:!shoppingCartList || shoppingCartList.length<1}"
+             @click="openCart"></div>
+        <div :class="{divGoodsNum:1===1, moreGoods:shoppingCartList && shoppingCartList.length > 99}"
+             v-if="shoppingCartList && shoppingCartList.length > 0">{{ goodsNum }}
+        </div>
+        <div class="divNum">
+            <span>￥</span>
+            <span>{{goodsPrice / 100}}</span>
+        </div>
+        <div class="divPrice"></div>
+        <div :class="{btnSubmitActive: shoppingCartList && shoppingCartList.length > 0, btnSubmit:!shoppingCartList || shoppingCartList.length<1}"
+             @click="toAddOrderPage">去结算
+        </div>
+    </div>
+
+    <van-dialog v-model="dialogFlavor.show" :show-confirm-button="false" class="dialogFlavor" ref="flavorDialog">
+        <div class="dialogTitle">{{dialogFlavor.name}}</div>
+        <div class="divContent">
+            <div v-for="flavor in dialogFlavor.flavorList" :key="flavor.id">
+                <div class="divFlavorTitle">{{flavor.name}}</div>
+                <span v-for="item in JSON.parse(flavor.value)"
+                      :key="item"
+                      @click="flavorClick(flavor,item)"
+                      :class="{spanActive:flavor.dishFlavor === item}"
+                >{{item}}</span>
+            </div>
+        </div>
+        <div class="divBottom">
+            <div><span class="spanMoney">￥</span>{{dialogFlavor.price / 100}}</div>
+            <div @click="dialogFlavorAddCart">加入购物车</div>
+        </div>
+        <div class="divFlavorClose" @click="dialogFlavor.show = false">
+            <img src="./images/close.png"/>
+        </div>
+    </van-dialog>
+
+    <van-popup v-model="cartDialogShow" position="bottom" :style="{ height: '50%' }" class="dialogCart">
+        <div class="divCartTitle">
+            <div class="title">购物车</div>
+            <div class="clear" @click="clearCart">
+                <i class="el-icon-delete"></i> 清空
+            </div>
+        </div>
+
+        <div class="divCartContent">
+            <div v-for="item in shoppingCartList" :key="item.id" class="divCartItem" v-if="item.amount > 0">
+                <el-image :src="imgPathConvert(item.image)">
+                    <div slot="error" class="image-slot">
+                        <img src="./images/noImg.png"/>
+                    </div>
+                </el-image>
+                <div class="divDesc">
+                    <div class="name">{{item.name}}</div>
+                    <div class="price">
+                        <span class="spanMoney">￥</span>{{item.price / 100}}
+                    </div>
+                </div>
+                <div class="divNum">
+                    <div class="divSubtract">
+                        <img src="./images/subtract.png" @click="cartNumberSubtract(item)"/>
+                    </div>
+                    <div class="divDishNum">{{item.amount}}</div>
+                    <div class="divAdd">
+                        <img src="./images/add.png" @click="cartNumAdd(item)"/>
+                    </div>
+                </div>
+                <div class="divSplit"></div>
+            </div>
+        </div>
+    </van-popup>
+
+    <van-dialog v-model="dishDialog.show" :show-confirm-button="false" class="detailsDialog" ref="detailsDialog"
+                v-if="dishDialog.show">
+        <div class="divContainer">
+            <el-image :src="imgPathConvert(dishDialog.item.image)">
+                <div slot="error" class="image-slot">
+                    <img src="./images/noImg.png"/>
+                </div>
+            </el-image>
+            <div class="title">{{dishDialog.item.name}}</div>
+            <div class="content">{{dishDialog.item.description}}</div>
+        </div>
+        <div class="divNum">
+            <div class="left">
+                <span>￥</span><span>{{dishDialog.item.price / 100}}</span>
+            </div>
+            <div class="right">
+                <div class="divSubtract" v-if="dishDialog.item.number > 0">
+                    <img src="./images/subtract.png" @click="subtractCart(dishDialog.item)"/>
+                </div>
+                <div class="divDishNum">{{dishDialog.item.number}}</div>
+                <div class="divTypes"
+                     v-if="dishDialog.item.flavorList && dishDialog.item.flavorList.length > 0 && !dishDialog.item.number "
+                     @click="chooseFlavorClick(dishDialog.item)">选择规格
+                </div>
+                <div class="divAdd" v-else>
+                    <img src="./images/add.png" @click="addCart(dishDialog.item)"/>
+                </div>
+            </div>
+        </div>
+        <div class="detailsDialogClose" @click="dishDialog.show = false">
+            <img src="./images/close.png"/>
+        </div>
+    </van-dialog>
+
+
+    <van-dialog v-model="comboDialog.show" :show-confirm-button="false" class="setMealDetailsDialog"
+                ref="setMealDetailsDialog" v-if="comboDialog.show">
+        <div class="divContainer">
+            <div class="title">{{comboDialog.item.name}}</div>
+            <div class="item" v-for="(item,index) in comboDialog.item.list" :key="index">
+                <el-image :src="imgPathConvert(item.image)">
+                    <div slot="error" class="image-slot">
+                        <img src="./images/noImg.png"/>
+                    </div>
+                </el-image>
+                <div class="divSubTitle">{{item.name + '(' + item.amount + '份)' }}
+                    <div class="divPrice">
+                        <span>￥</span><span>{{item.price / 100}}</span>
+                    </div>
+                </div>
+                <div class="content">{{item.description}}</div>
+            </div>
+        </div>
+        <div class="divNum">
+            <div class="left">
+                <span>￥</span><span>{{comboDialog.item.price / 100}}</span>
+            </div>
+            <div class="right">
+                <div class="divSubtract" v-if="comboDialog.item.amount > 0">
+                    <img src="./images/subtract.png" @click="subtractCart(comboDialog.item)"/>
+                </div>
+                <div class="divDishNum">{{comboDialog.item.amount}}</div>
+                <div class="divAdd" v-if="comboDialog.item.amount">
+                    <img src="./images/add.png" @click="addCart(comboDialog.item)"/>
+                </div>
+                <div class="addCart" @click="addCart(comboDialog.item)" v-if="!comboDialog.item.amount">
+                    加入购物车
+                </div>
+            </div>
+        </div>
+        <div class="detailsDialogClose" @click="comboDialog.show = false">
+            <img src="./images/close.png"/>
+        </div>
+    </van-dialog>
+</div>
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../backend/plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../backend/plugins/element-ui/index.js"></script>
+<!-- 引入vant样式 -->
+<script src="./js/vant.min.js"></script>
+<!-- 引入axios -->
+<script src="../backend/plugins/axios/axios.min.js"></script>
+<script src="./js/request.js"></script>
+<script src="./js/common.js"></script>
+<script src="./api/main.js"></script>
+<script src="./api/order.js"></script>
+</body>
+<script>
+    new Vue({
+        el: '#main',
+        data() {
+            return {
+                activeType: 0,
+                categoryList: [],
+                categoryId: undefined,
+                dishAndComboList: [],
+                shoppingCartList: [],
+                dialogFlavor: {
+                    name: '',
+                    flavorList: [],
+                    dishId: undefined,
+                    price: undefined,
+                    show: false,
+                    image: ''
+                },
+                cartDialogShow: false,
+                dishDialog: {
+                    show: false,
+                    item: {image: ''}
+                },
+                comboDialog: {
+                    show: false,
+                    item: {}
+                },
+                orders: {
+                    id: ''
+                }
+            }
+        },
+        computed: {
+            goodsNum() {
+                let num = 0
+                this.shoppingCartList.forEach(item => {
+                    num += item.amount
+                })
+                if (num < 99) {
+                    return num
+                } else {
+                    return '99+'
+                }
+            },
+            goodsPrice() {
+                let price = 0
+                this.shoppingCartList.forEach(item => {
+                    price += (item.price * item.amount)
+                })
+                return price
+            }
+        },
+        watch: {
+            'dialogFlavor.show'(flag) {
+                if (flag) {
+                    document.querySelector('.divCart').style.zIndex = 1
+                } else {
+                    document.querySelector('.divCart').style.zIndex = 3000
+                }
+            },
+        },
+        mounted() {
+            this.initData()
+        },
+        methods: {
+            initData() {
+                Promise.all([categoryListApi({}), shoppingCartListApi()]).then(res => {
+                    // 获取分类数据
+                    if (res[0].code === 1) {
+                        this.categoryList = res[0].data
+                        if (Array.isArray(res[0].data) && res[0].data.length > 0) {
+                            this.categoryId = res[0].data[0].id
+                            if (res[0].data[0].categoryType === 1) {
+                                this.getDishList()
+                            } else {
+                                this.getComboList()
+                            }
+                        }
+                    } else {
+                        this.$notify({type: 'warning', message: res[0].msg});
+                    }
+                    // 获取购物车数据
+                    if (res[1].code === 1) {
+                        this.shoppingCartList = res[1].data
+                    } else {
+                        this.$notify({type: 'warning', message: res[1].msg});
+                    }
+                })
+            },
+            // 分类点击
+            categoryClick(index, id, type) {
+                this.activeType = index
+                this.categoryId = id
+                if (type === 1) {
+                    this.getDishList()
+                } else {
+                    this.getComboList()
+                }
+            },
+            // 获取菜品数据
+            async getDishList() {
+                if (!this.categoryId) {
+                    return
+                }
+                const params = {
+                    categoryId: this.categoryId,
+                    status: 1
+                }
+                const res = await dishListApi(params)
+                if (res.code === 1) {
+                    let dishAndComboList = res.data
+                    const shoppingCartList = this.shoppingCartList
+                    if (dishAndComboList.length > 0 && shoppingCartList.length > 0) {
+                        dishAndComboList.forEach(dish => {
+                            shoppingCartList.forEach(cart => {
+                                if (dish.id === cart.dishId) {
+                                    dish.amount = cart.amount
+                                }
+                            })
+                        })
+                    }
+                    this.dishAndComboList = dishAndComboList
+                    console.log('获取菜品数据:dishAndComboList',this.dishAndComboList)
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 获取套餐数据
+            async getComboList() {
+                if (!this.categoryId) {
+                    return
+                }
+                const params = {
+                    categoryId: this.categoryId,
+                    status: 1
+                }
+                const res = await comboListApi(params)
+                if (res.code === 1) {
+                    let dishAndComboList = res.data
+                    const shoppingCartList = this.shoppingCartList
+                    if (dishAndComboList.length > 0 && shoppingCartList.length > 0) {
+                        dishAndComboList.forEach(combo => {
+                            shoppingCartList.forEach(cart => {
+                                if (combo.id === cart.comboId) {
+                                    combo.amount = cart.amount
+                                }
+                            })
+                        })
+                    }
+                    this.dishAndComboList = dishAndComboList
+                    console.log('获取套餐数据:dishAndComboList',this.dishAndComboList)
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 获取购物车数据
+            async getShoppingCartList() {
+                const res = await shoppingCartListApi()
+                console.log('获取购物车数据:res.data',res.data)
+                if (res.code === 1) {
+                    this.shoppingCartList = res.data
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 菜单中往购物车中添加商品
+            async addCart(item) {
+                let params = {
+                    amount: item.amount + 1,
+                    dishFlavor: item.dishFlavor,
+                    dishId: undefined,
+                    comboId: undefined
+                }
+                console.log('菜单中往购物车中添加商品,item',item)
+                if (Array.isArray(item.flavorList)) {
+                    params.dishId = item.id
+                } else {
+                    params.comboId = item.id
+                }
+                const res = await addCartApi(params)
+                if (res.code === 1) {
+                    this.dishAndComboList.forEach(dish => {
+                        if (dish.id === item.id) {
+                            dish.amount = res.data.amount
+                        }
+                    })
+                    if (this.comboDialog.show) {
+                        item.amount = res.data.amount
+                    }
+                    await this.getShoppingCartList()
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 菜单中减少选中的商品
+            async subtractCart(item) {
+                let params = {
+                    dishId: undefined,
+                    comboId: undefined
+                }
+                if (Array.isArray(item.flavorList)) {
+                    params.dishId = item.id
+                } else {
+                    params.comboId = item.id
+                }
+                const res = await updateCartApi(params)
+                if (res.code === 1) {
+                    this.dishAndComboList.forEach(dish => {
+                        if (dish.id === item.id) {
+                            dish.amount = (res.data.amount === 0 ? undefined : res.data.amount)
+                        }
+                    })
+                    if (this.comboDialog.show) {
+                        item.amount = (res.data.amount === 0 ? undefined : res.data.amount)
+                    }
+                    await this.getShoppingCartList()
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 展开购物车
+            openCart() {
+                if (this.shoppingCartList.length > 0) {
+                    this.cartDialogShow = true
+                }
+            },
+            // 购物车中增加商品数量
+            async cartNumAdd(item) {
+                let params = {
+                    amount: item.amount + 1,
+                    dishFlavor: item.dishFlavor,
+                    dishId: item.dishId,
+                    comboId: item.comboId,
+                    name: item.name,
+                    image: item.image
+                }
+                const res = await addCartApi(params)
+                if (res.code === 1) {
+                    this.dishAndComboList.forEach(dish => {
+                        if (dish.id === (item.dishId || item.comboId)) {
+                            dish.amount = res.data.amount
+                        }
+                    })
+                    this.getShoppingCartList()
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 购物车中减少商品数量
+            async cartNumberSubtract(item) {
+                let params = {
+                    dishId: item.dishId,
+                    comboId: item.comboId,
+                }
+                const res = await updateCartApi(params)
+                if (res.code === 1) {
+                    this.dishAndComboList.forEach(dish => {
+                        if (dish.id === (item.dishId || item.comboId)) {
+                            dish.amount = (res.data.amount === 0 ? undefined : res.data.amount)
+                        }
+                    })
+                    await this.getShoppingCartList()
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 修改商品列表中的数据number
+            changeDishList(item) {
+                for (let ele of this.dishAndComboList) {
+                    if (ele.id === (item.comboId || item.dishId)) {
+                        ele.amount = item.amount
+                    }
+                }
+            },
+            // 清空购物车
+            async clearCart() {
+                const res = await clearCartApi()
+                if (res.code === 1) {
+                    for (let ele of this.dishAndComboList) {
+                        ele.amount = undefined
+                    }
+                    this.shoppingCartList = []
+                    this.cartDialogShow = false
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            // 点击选择规格
+            chooseFlavorClick(item) {
+                this.dialogFlavor = {
+                    name: '',
+                    flavorList: [],
+                    dishId: undefined,
+                    price: undefined,
+                    show: false
+                }
+                this.dialogFlavor = {
+                    name: item.name,
+                    flavorList: item.flavorList,
+                    dishId: item.id,
+                    price: item.price,
+                    show: true,
+                    image: item.image
+                }
+            },
+            // 口味选择
+            flavorClick(flavor, item) {
+                flavor.dishFlavor = item
+                //强制刷新dialog的dom
+                this.dialogFlavor.show = false
+                this.dialogFlavor.show = true
+            },
+            // 选择规格加入购物车
+            dialogFlavorAddCart() {
+                const dialogFlavor = this.dialogFlavor
+                let flag = true
+                let dishFlavor = []
+                dialogFlavor.flavorList.forEach(item => {
+                    if (item.dishFlavor) {
+                        dishFlavor.push(item.dishFlavor)
+                    } else {
+                        flag = false
+                        this.$notify({type: 'warning', message: '请选择' + item.name});
+                    }
+                })
+                if (flag) {
+                    this.addCart({
+                        price: dialogFlavor.price,
+                        dishFlavor: dishFlavor.join(","),
+                        id: dialogFlavor.dishId,
+                        flavorList: [],
+                        image: dialogFlavor.image,
+                        name: dialogFlavor.name
+                    })
+                    this.dialogFlavor.show = false
+                }
+
+            },
+            // 网络图片路径转换
+            imgPathConvert(path) {
+                return imgPath(path)
+            },
+            // 跳转到去结算界面
+            async toAddOrderPage() {
+                await addShoppingCartToOrders().then(res => {
+                    if (res.code === 1 && this.shoppingCartList.length > 0) {
+                        this.orders = res.data
+                        window.requestAnimationFrame(() => {
+                            window.location.href = '/front/page/add-order.html?ordersId=' + this.orders.id
+                        })
+                    }
+                })
+            },
+            toUserPage() {
+                window.requestAnimationFrame(() => {
+                    window.location.href = '/front/page/user.html'
+                })
+            },
+            async dishAndComboDetails(item) {
+                this.dishDialog.item = {}
+                this.comboDialog.item = {}
+                if (Array.isArray(item.flavorList)) {
+                    this.dishDialog.item = item
+                    this.dishDialog.show = true
+                } else {
+                    const params = {
+                        id: item.id
+                    }
+                    const res = await getComboByIdApi(params)
+                    if (res.code === 1) {
+                        this.comboDialog.item = {...item, list: res.data.comboDishDTOList}
+                        this.comboDialog.show = true
+                    } else {
+                        this.$notify({type: 'warning', message: res.msg});
+                    }
+                }
+            }
+        }
+    })
+</script>
+</html>

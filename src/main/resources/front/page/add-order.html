@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
+    <title>Echo餐厅</title>
+    <link rel="icon" href="./../images/favico.ico">
+    <script src="./../js/base.js"></script>
+    <link rel="stylesheet" href="../../backend/plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../styles/vant.min.css"/>
+    <link rel="stylesheet" href="../styles/index.css"/>
+    <link rel="stylesheet" href="./../styles/add-order.css"/>
+</head>
+<body>
+<div id="add-order" class="app">
+    <div class="divHead">
+        <div class="divTitle">
+            <i class="el-icon-arrow-left" @click="goBack"></i>菩提阁
+        </div>
+    </div>
+    <div class="divContent">
+        <div class="divAddress">
+            <div @click="toAddressPage">
+                <div class="address">{{address.detail}}</div>
+                <div class="name">
+                    <span>{{address.consignee}}{{address.sex === 1 ? '先生' : '女士'}}</span>
+                    <span>{{address.phone}}</span>
+                </div>
+                <i class="el-icon-arrow-right"></i>
+            </div>
+            <div class="divSplit"></div>
+            <div class="divFinishTime">预计{{finishTime}}送达</div>
+        </div>
+        <div class="order">
+            <div class="title">订单明细</div>
+            <div class="divSplit"></div>
+            <div class="itemList">
+                <div class="item" v-for="(item,index) in orders.ordersInfoDTOList" :key="index">
+                    <el-image :src="imgPathConvert(item.image)">
+                        <div slot="error" class="image-slot">
+                            <img src="./../images/noImg.png" alt=""/>
+                        </div>
+                    </el-image>
+                    <div class="desc">
+                        <div class="name">{{item.name}}</div>
+                        <div class="numPrice">
+                            <span class="num">x{{item.amount}}</span>
+                            <div class="price">
+                                <span class="spanMoney">￥</span>{{item.price / 100}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="note">
+            <div class="title">备注</div>
+            <van-field v-model="note" rows="2" autosize type="textarea" maxlength="50" placeholder="请输入您需要备注的信息"
+                       show-word-limit></van-field>
+        </div>
+    </div>
+    <div class="divCart">
+        <div :class="{imgCartActive: orders.ordersInfoDTOList && orders.ordersInfoDTOList.length > 0, imgCart:!orders.ordersInfoDTOList || orders.ordersInfoDTOList.length<1}"></div>
+        <div :class="{divGoodsNum:1===1, moreGoods:orders.ordersInfoDTOList && orders.ordersInfoDTOList.length > 99}"
+             v-if="orders.ordersInfoDTOList && orders.ordersInfoDTOList.length > 0">{{ goodsNum }}
+        </div>
+        <div class="divNum">
+            <span>￥</span>
+            <span>{{goodsPrice / 100}}</span>
+        </div>
+        <div class="divPrice"></div>
+        <div :class="{btnSubmitActive: orders.ordersInfoDTOList && orders.ordersInfoDTOList.length > 0,
+        btnSubmit:!orders.ordersInfoDTOList || orders.ordersInfoDTOList.length<1}" @click="goToPay">
+            去支付
+        </div>
+    </div>
+</div>
+<script src="../../backend/plugins/vue/vue.js"></script>
+<script src="../../backend/plugins/element-ui/index.js"></script>
+<script src="../../backend/plugins/axios/axios.min.js"></script>
+<script src="./../js/vant.min.js"></script>
+<script src="./../js/request.js"></script>
+<script src="./../js/common.js"></script>
+<script src="./../api/main.js"></script>
+<script src="./../api/order.js"></script>
+<script src="./../api/address.js"></script>
+<script>
+    new Vue({
+        el: "#add-order",
+        data() {
+            return {
+                ordersId: '',
+                address: {
+                    phone: '',
+                    consignee: '',
+                    detail: '',
+                    sex: 1,
+                    id: undefined
+                },
+                finishTime: '',
+                note: '',
+                orders: {}
+            }
+        },
+        computed: {
+            goodsNum() {
+                let amount = 0
+                this.orders.ordersInfoDTOList.forEach(item => {
+                    amount += item.amount
+                })
+                if (amount < 99) {
+                    return amount
+                } else {
+                    return '99+'
+                }
+            },
+            goodsPrice() {
+                let price = 0
+                this.orders.ordersInfoDTOList.forEach(item => {
+                    price += (item.price * item.amount)
+                })
+                return price
+            }
+        },
+        created() {
+            this.ordersId = requestUrlApi('ordersId')
+            this.initData()
+        },
+        methods: {
+            goBack() {
+                const url = document.referrer
+                const params = {
+                    id: this.ordersId
+                }
+                if (url.includes('index')) {
+                    deleteOrdersToShoppingCartApi(params).then(res => {
+                        if (res.code === 1) {
+                            window.location.href = '/front/index.html'
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    })
+                } else {
+                    editOrdersStatusApi(params).then(res => {
+                        if (res.code === 1) {
+                            history.go(-1)
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    })
+                }
+            },
+            initData() {
+                this.defaultAddress()
+                this.getOrdersData()
+            },
+            async defaultAddress() {
+                const res = await getDefaultAddressApi()
+                if (res.code === 1) {
+                    this.address = res.data
+                    this.getFinishTime()
+                } else {
+                    window.requestAnimationFrame(() => {
+                        window.location.href = '/front/page/address-edit.html'
+                    })
+                }
+            },
+            getFinishTime() {
+                let now = new Date()
+                let hour = now.getHours() + 1
+                let minute = now.getMinutes()
+                if (hour.toString().length < 2) {
+                    hour = '0' + hour
+                }
+                if (minute.toString().length < 2) {
+                    minute = '0' + minute
+                }
+                this.finishTime = hour + ':' + minute
+            },
+            toAddressPage() {
+                window.requestAnimationFrame(() => {
+                    window.location.href = '/front/page/address.html'
+                })
+            },
+            async getOrdersData() {
+                const params = {
+                    id: this.ordersId
+                }
+                const res = await getOrdersByIdApi(params);
+                if (res.code === 1) {
+                    this.orders = res.data
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            async goToPay() {
+                const res = window.location.href = '/alipay/buy?remark=' + this.note + '&addressId=' + this.address.id + '&ordersId=' + this.ordersId;
+                if (res.code === 1) {
+                    window.requestAnimationFrame(() => {
+                        window.location.replace('/front/page/pay-success.html')
+                    })
+                } else {
+                    this.$notify({type: 'warning', message: res.msg});
+                }
+            },
+            imgPathConvert(path) {
+                return imgPath(path)
+            }
+        }
+    })
+</script>
+</body>
+</html>

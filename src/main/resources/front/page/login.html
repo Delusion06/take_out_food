@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no,minimal-ui">
+    <title>Echo藏宝图</title>
+    <link rel="icon" href="./../images/favico.ico">
+    <script src="./../js/base.js"></script>
+    <link rel="stylesheet" href="../../backend/plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../styles/vant.min.css"/>
+    <link rel="stylesheet" href="../styles/index.css"/>
+    <link rel="stylesheet" href="./../styles/login.css"/>
+</head>
+<body>
+<div id="login" v-loading="loading">
+    <div class="divHead">登录</div>
+    <div class="divContainer">
+        <el-input placeholder=" 请输入手机号码" v-model="form.phone" maxlength='20'></el-input>
+        <div class="divSplit"></div>
+
+        <el-input placeholder=" 请输入密码" v-model="form.password" maxlength='20' show-password></el-input>
+        <span @click="handleEditPassword">忘记密码</span>
+        <div class="divSplit"></div>
+    </div>
+    <div class="divMsg" v-if="msgFlag">手机号输入不正确，请重新输入</div>
+    <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}" @click="login">
+        登录
+    </el-button>
+    <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}"
+               @click="handleRegister">
+        <span>暂无账号?前往注册...</span>
+    </el-button>
+</div>
+<script src="../../backend/plugins/vue/vue.js"></script>
+<script src="../../backend/plugins/element-ui/index.js"></script>
+<script src="./../js/vant.min.js"></script>
+<script src="../../backend/plugins/axios/axios.min.js"></script>
+<script src="./../js/request.js"></script>
+<script src="../api/user.js"></script>
+</body>
+<script>
+    new Vue({
+        el: "#login",
+        data() {
+            return {
+                form: {
+                    phone: '17347208325',
+                    password: '000621'
+                },
+                msgFlag: false,
+                loading: false
+            }
+        },
+        methods: {
+            async login() {
+                if (this.form.phone && this.form.password) {
+                    this.loading = true
+                    const res = await loginApi(this.form)
+                    this.loading = false
+                    if (res.code === 1) {
+                        sessionStorage.setItem("userPhone", this.form.phone)
+                        window.requestAnimationFrame(() => {
+                            window.location.href = '/front/index.html'
+                        })
+                    } else if (res.code === -1) {
+                        window.requestAnimationFrame(() => {
+                            window.location.href = '/front/page/edit-user.html'
+                        })
+                    } else {
+                        this.$notify({type: 'warning', message: res.msg});
+                    }
+                } else {
+                    this.$notify({type: 'warning', message: '请输入手机号码'});
+                }
+            },
+            handleRegister() {
+                window.location.href = '/front/page/register.html'
+            },
+            handleEditPassword() {
+                window.location.href = '/front/page/edit-password.html'
+            }
+        }
+    })
+</script>
+</html>
