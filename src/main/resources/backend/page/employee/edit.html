@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Echo外卖管理端</title>
-    <!-- 引入样式 -->
     <link rel="stylesheet" href="../../plugins/element-ui/index.css"/>
     <link rel="stylesheet" href="../../styles/common.css"/>
     <link rel="stylesheet" href="../../styles/page.css"/>
@@ -13,26 +12,16 @@
 <body>
 <div class="addBrand-container" id="member-edit-app">
     <div class="container">
-        <el-form
-                ref="editForm"
-                :model="editForm"
-                :rules="editRules"
-                :inline="false"
-                label-width="180px"
-                class="demo-ruleForm"
-        >
+        <el-form ref="editForm" :model="editForm" :rules="editRules" :inline="false" label-width="180px" class="demo-ruleForm">
             <el-form-item label="账号:" prop="username">
                 <el-input v-model="editForm.username" placeholder="请输入账号" maxlength="20"></el-input>
             </el-form-item>
-
             <el-form-item label="密码:" prop="password">
                 <el-input v-model="editForm.password" placeholder="请输入密码" maxlength="20" show-password></el-input>
             </el-form-item>
-
             <el-form-item label="确认密码:" prop="validPassword">
-                <el-input v-model="editForm.validPassword" placeholder="请再次输入密码" maxlength="20" show-password></el-input>
+                <el-input  v-model="editForm.validPassword" placeholder="请再次输入密码" maxlength="20" show-password></el-input>
             </el-form-item>
-
             <div class="subBox address">
                 <el-form-item>
                     <el-button @click="goBack()">
@@ -46,11 +35,8 @@
         </el-form>
     </div>
 </div>
-<!-- 开发环境版本，包含了有帮助的命令行警告 -->
 <script src="../../plugins/vue/vue.js"></script>
-<!-- 引入组件库 -->
 <script src="../../plugins/element-ui/index.js"></script>
-<!-- 引入axios -->
 <script src="../../plugins/axios/axios.min.js"></script>
 <script src="../../js/request.js"></script>
 <script src="../../api/employee.js"></script>
@@ -83,7 +69,7 @@
                 }
                 return {
                     password: [{required: true, validator: validatePassword, trigger: 'blur'}],
-                    validPassword: [{required: true, 'validator': validateValidPassword, trigger: 'blur'}]
+                    validPassword: [{required: true, validator: validateValidPassword, trigger: 'blur'}]
                 }
             }
         },
@@ -97,10 +83,9 @@
                     id: this.id
                 }
                 await getEmployeeById(params).then(res => {
-                    if (String(res.code) === '1') {
+                    if (res.code === 1) {
                         this.editForm = res.data
                         this.editForm.password = ''
-                        this.editForm.validPassword = ''
                     } else {
                         this.$message.error(res.msg || '操作失败')
                     }
@@ -115,7 +100,7 @@
                         delete params.validPassword
                         editEmployee(params).then(res => {
                             if (res.code === 1) {
-                                this.$message.success('密码修改成功！')
+                                this.$message.success('密码修改成功!')
                                 this.goBack()
                             } else {
                                 this.$message.error(res.msg || '操作失败')

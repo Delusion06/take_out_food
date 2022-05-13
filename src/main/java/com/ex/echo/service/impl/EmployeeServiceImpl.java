@@ -59,7 +59,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Page<EmployeeInfo> pageInfo = new Page(page, pageSize);
 
         LambdaQueryWrapper<EmployeeInfo> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StringUtils.isNotEmpty(employeeName),EmployeeInfo::getEmployeeName,employeeName);
+        wrapper.like(StringUtils.isNotEmpty(employeeName),EmployeeInfo::getEmployeeName,employeeName);
 
         employeeInfoMapper.selectPage(pageInfo, wrapper);
 
@@ -143,14 +143,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional(rollbackFor = RuntimeException.class)
     public Boolean editEmployee(EmployeeDTO employeeDTO, Long employeeId) {
-        log.info("修改员工信息,employeeDTO:[{}],employeeId:[{}]", employeeDTO, employeeId);
-
         EmployeeInfo employeeInfo = new EmployeeInfo();
         BeanUtils.copyProperties(employeeDTO, employeeInfo);
         employeeInfo.setUpdateEmployeeId(employeeId);
         employeeInfoMapper.updateById(employeeInfo);
-
-        log.info("修改员工信息,employeeInfo:[{}]", employeeInfo);
 
         long newEmployeeId = employeeInfoMapper.selectById(employeeDTO.getId()).getEmployeeId();
 
@@ -164,10 +160,14 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee.setPassword(password);
         }
 
-        log.info("修改员工信息,employee:[{}]", employee);
-
         employeeMapper.updateById(employee);
-
         return true;
+    }
+
+    @Override
+    public Boolean getEmployeeByPhone(EmployeeDTO employeeDTO) {
+        String phone = employeeDTO.getPhone();
+
+        return null;
     }
 }

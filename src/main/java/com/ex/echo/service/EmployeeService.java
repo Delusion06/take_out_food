@@ -54,4 +54,6 @@ public interface EmployeeService{
      * @return .
      */
     public Boolean editEmployee(EmployeeDTO employeeDTO,Long employeeId);
+
+    public Boolean getEmployeeByPhone(EmployeeDTO employeeDTO);
 }

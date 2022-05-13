@@ -40,7 +40,7 @@ public interface DishFlavorMapper extends BaseMapper<DishFlavor> {
      */
     @Update("<script>" +
             "update dish_flavor set " +
-            "is_deleted = '1'," +
+            "is_deleted = 1," +
             "update_time = now()," +
             "update_employee_id = #{employeeId} " +
             "where id in " +

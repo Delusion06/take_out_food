@@ -29,3 +29,11 @@ function editNotice(params) {
         data: {...params}
     })
 }
+
+function editStatus(params) {
+    return $axios({
+        url: '/notice/editStatus',
+        method: 'post',
+        data: {...params}
+    })
+}

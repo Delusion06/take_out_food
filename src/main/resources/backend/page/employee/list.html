@@ -92,7 +92,7 @@
                     employeeName: this.input ? this.input : undefined
                 }
                 await getEmployeePage(params).then(res => {
-                    if (String(res.code) === '1') {
+                    if (res.code === 1) {
                         this.tableData = res.data.records || []
                         this.counts = res.data.total
                     }
@@ -137,9 +137,8 @@
                     'cancelButtonText': '取消',
                     'type': 'warning'
                 }).then(() => {
-
                     editEmployee({'id': this.id, 'status': !this.status ? 1 : 0}).then(res => {
-                        if (String(res.code) === '1') {
+                        if (res.code === 1) {
                             this.$message.success('账号状态更改成功！')
                             this.handleQuery()
                         }

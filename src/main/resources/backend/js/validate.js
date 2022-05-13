@@ -61,23 +61,31 @@ function checkPhone(rule, value, callback) {
     }
 }
 
+function validSex(rule, value, callback) {
+    if (value.length <= 0){
+        callback(new Error('请选择性别'))
+    }else {
+        callback()
+    }
+}
+
 function validID(rule, value, callback) {
     // 身份证号码为15位或者18位，15位时全为数字，18位前17位为数字，最后一位是校验位，可能为数字或字符X
     let reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/
     if (value == '') {
         callback(new Error('请输入身份证号码'))
-    } else if (reg.test(value)) {
-        callback()
+    } else if (!reg.test(value)) {
+        callback('身份证号码不正确')
     } else {
-        callback(new Error('身份证号码不正确'))
+        callback()
     }
 }
 
 function validNotice(rule, value, callback) {
     if (value.length <= 0) {
         callback(new Error('请输入公告内容'))
-    } else if (value.length > 200) {
-        callback(new Error('公告限制字数200'))
+    } else if (value.length > 50) {
+        callback(new Error('公告限制字数50'))
     } else {
         callback()
     }

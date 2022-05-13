@@ -80,3 +80,9 @@ function requestUrlApi(argName) {
     return ""
 }
 
+function getNotice() {
+    return $axios({
+        url: '/notice/getNoticeByStatus',
+        method: 'post',
+    })
+}

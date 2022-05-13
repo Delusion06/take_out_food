@@ -16,7 +16,7 @@
 <body>
 <div id="main" class="app">
     <div class="divHead">
-        <img src="./images/user.png" @click="toUserPage"/>
+        <img src="./images/user.png" @click="toUserPage" alt=""/>
     </div>
     <div class="divTitle">
         <div class="divStatic">
@@ -31,7 +31,7 @@
             </div>
         </div>
         <div class="divDesc">
-            简介: 菩提阁中餐厅是菩提阁点餐的独立的品牌，定位“大众 化的美食外送餐饮”，旨为顾客打造专业美食。
+            公告:<span>{{notice}}</span>
         </div>
     </div>
     <div class="divBody">
@@ -113,7 +113,7 @@
             <div @click="dialogFlavorAddCart">加入购物车</div>
         </div>
         <div class="divFlavorClose" @click="dialogFlavor.show = false">
-            <img src="./images/close.png"/>
+            <img src="./images/close.png" alt=""/>
         </div>
     </van-dialog>
 
@@ -245,6 +245,7 @@
         el: '#main',
         data() {
             return {
+                notice: '',
                 activeType: 0,
                 categoryList: [],
                 categoryId: undefined,
@@ -306,7 +307,7 @@
         },
         methods: {
             initData() {
-                Promise.all([categoryListApi({}), shoppingCartListApi()]).then(res => {
+                Promise.all([categoryListApi({}), shoppingCartListApi(),getNotice()]).then(res => {
                     // 获取分类数据
                     if (res[0].code === 1) {
                         this.categoryList = res[0].data
@@ -326,6 +327,12 @@
                         this.shoppingCartList = res[1].data
                     } else {
                         this.$notify({type: 'warning', message: res[1].msg});
+                    }
+                    // 获取公告数据
+                    if (res[2].code === 1){
+                        this.notice = res[2].data.notice
+                    }else {
+                        this.notice = '暂无公告'
                     }
                 })
             },
@@ -362,7 +369,7 @@
                         })
                     }
                     this.dishAndComboList = dishAndComboList
-                    console.log('获取菜品数据:dishAndComboList',this.dishAndComboList)
+                    console.log('获取菜品数据:dishAndComboList', this.dishAndComboList)
                 } else {
                     this.$notify({type: 'warning', message: res.msg});
                 }
@@ -390,7 +397,7 @@
                         })
                     }
                     this.dishAndComboList = dishAndComboList
-                    console.log('获取套餐数据:dishAndComboList',this.dishAndComboList)
+                    console.log('获取套餐数据:dishAndComboList', this.dishAndComboList)
                 } else {
                     this.$notify({type: 'warning', message: res.msg});
                 }
@@ -398,7 +405,7 @@
             // 获取购物车数据
             async getShoppingCartList() {
                 const res = await shoppingCartListApi()
-                console.log('获取购物车数据:res.data',res.data)
+                console.log('获取购物车数据:res.data', res.data)
                 if (res.code === 1) {
                     this.shoppingCartList = res.data
                 } else {
@@ -413,7 +420,7 @@
                     dishId: undefined,
                     comboId: undefined
                 }
-                console.log('菜单中往购物车中添加商品,item',item)
+                console.log('菜单中往购物车中添加商品,item', item)
                 if (Array.isArray(item.flavorList)) {
                     params.dishId = item.id
                 } else {

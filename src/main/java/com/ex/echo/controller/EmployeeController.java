@@ -110,8 +110,6 @@ public class EmployeeController {
      */
     @RequestMapping(value = "/employee/add", method = RequestMethod.POST)
     public JsonModel<String> addEmployee(HttpServletRequest request, @RequestBody EmployeeDTO employeeDTO) {
-        log.info("添加员工信息,employeeDTO:[{}]", employeeDTO);
-
         Long employeeId = (Long) request.getSession().getAttribute(Constants.EMPLOYEE);
 
         boolean result = employeeService.addEmployee(employeeDTO,employeeId);
@@ -129,8 +127,6 @@ public class EmployeeController {
      */
     @RequestMapping(value = "/employee/edit", method = RequestMethod.POST)
     public JsonModel<String> editEmployee(HttpServletRequest request, @RequestBody EmployeeDTO employeeDTO) {
-        log.info("修改员工信息,employeeDTO:[{}]",employeeDTO);
-
         Long employeeId = (Long) request.getSession().getAttribute(Constants.EMPLOYEE);
 
         boolean result = employeeService.editEmployee(employeeDTO,employeeId);

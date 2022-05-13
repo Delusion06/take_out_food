@@ -44,17 +44,17 @@ public class NoticeServiceImpl implements NoticeService {
         noticeMapper.selectPage(pageInfo, wrapper);
 
         List<Notice> records = pageInfo.getRecords();
-        BeanUtils.copyProperties(pageInfo,noticeDTOPage,"records");
+        BeanUtils.copyProperties(pageInfo, noticeDTOPage, "records");
 
         List<NoticeDTO> noticeDTOList = records
-                .stream().map(item->{
+                .stream().map(item -> {
                     NoticeDTO noticeDTO = new NoticeDTO();
-                    BeanUtils.copyProperties(item,noticeDTO);
+                    BeanUtils.copyProperties(item, noticeDTO);
 
                     // 获取更新人姓名
                     long employeeId = item.getUpdateEmployeeId();
                     LambdaQueryWrapper<EmployeeInfo> wrapper1 = new LambdaQueryWrapper<>();
-                    wrapper1.eq(EmployeeInfo::getEmployeeId,employeeId);
+                    wrapper1.eq(EmployeeInfo::getEmployeeId, employeeId);
                     EmployeeInfo employeeInfo = employeeInfoMapper.selectOne(wrapper1);
                     if (StringUtils.isNotEmpty(employeeInfo.getEmployeeName())) {
                         noticeDTO.setUpdateEmployeeName(employeeInfo.getEmployeeName());
@@ -69,36 +69,70 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     public Notice getNoticeById(NoticeDTO noticeDTO) {
         Notice notice = noticeMapper.selectById(noticeDTO.getId());
-        if (Objects.isNull(notice)){
+        if (Objects.isNull(notice)) {
             return null;
         }
         return notice;
     }
 
     @Override
-    public Boolean addNotice(NoticeDTO noticeDTO,Long employeeId) {
+    public Boolean addNotice(NoticeDTO noticeDTO, Long employeeId) {
         Notice notice = new Notice();
-        BeanUtils.copyProperties(noticeDTO,notice);
+        BeanUtils.copyProperties(noticeDTO, notice);
         notice.setCreateEmployeeId(employeeId);
         notice.setUpdateEmployeeId(employeeId);
         try {
             noticeMapper.insert(notice);
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
         return true;
     }
 
     @Override
-    public Boolean editNotice(NoticeDTO noticeDTO,Long employeeId) {
+    public Boolean editNotice(NoticeDTO noticeDTO, Long employeeId) {
         Notice notice = new Notice();
-        BeanUtils.copyProperties(noticeDTO,notice);
+        notice.setId(noticeDTO.getId());
+        notice.setNotice(noticeDTO.getNotice());
+
         notice.setUpdateEmployeeId(employeeId);
         try {
             noticeMapper.updateById(notice);
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public Boolean editStatus(NoticeDTO noticeDTO, Long employeeId) {
+        if (noticeDTO.getStatus() == 1) {
+            LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Notice::getStatus, 1);
+
+            Notice notice = new Notice();
+            notice.setStatus(0);
+            noticeMapper.update(notice, wrapper);
+        }
+        Notice newNotice = new Notice();
+        newNotice.setId(noticeDTO.getId());
+        newNotice.setStatus(noticeDTO.getStatus());
+        try {
+            noticeMapper.updateById(newNotice);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public Notice getNoticeByStatus() {
+        LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Notice::getStatus,1);
+        try {
+            return noticeMapper.selectOne(wrapper);
+        }catch (Exception e){
+            return new Notice();
+        }
     }
 }

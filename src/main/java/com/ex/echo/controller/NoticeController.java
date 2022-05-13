@@ -92,4 +92,24 @@ public class NoticeController {
         }
         return JsonModel.success("修改成功!");
     }
+
+    @RequestMapping(value = "/notice/editStatus", method = RequestMethod.POST)
+    public JsonModel<String> editStatus(HttpServletRequest request,@RequestBody NoticeDTO noticeDTO){
+        Long employeeId = (Long) request.getSession().getAttribute(Constants.EMPLOYEE);
+
+        boolean result = noticeService.editStatus(noticeDTO,employeeId);
+        if (!result) {
+            return JsonModel.error("修改失败!");
+        }
+        return JsonModel.success("修改成功!");
+    }
+
+    @RequestMapping(value = "/notice/getNoticeByStatus",method = RequestMethod.POST)
+    public JsonModel<Notice> getByStatus(HttpServletRequest request){
+        Notice result = noticeService.getNoticeByStatus();
+        if (Objects.isNull(result)){
+            return JsonModel.error("查询不到数据");
+        }
+        return JsonModel.success(result);
+    }
 }

@@ -46,4 +46,8 @@ public interface NoticeService{
      * @return .
      */
     public Boolean editNotice(NoticeDTO noticeDTO,Long employeeId);
+
+    public Boolean editStatus(NoticeDTO noticeDTO,Long employeeId);
+
+    public Notice getNoticeByStatus();
 }
